@@ -1,10 +1,10 @@
 [project]
 name = "primitive-db"
-version = "0.4.0"
-description = "Console application that emulates a primitive database"
+version = "0.5.0"
+description = "Консольная примитивная база данных: таблицы, CRUD-операции и JSON-хранилище"
 readme = "README.md"
 authors = [
-    { name = "ramil", email = "sf.vfkmxbr@mail.ru" }
+    { name = "Ramil Basyrov", email = "sf.vfkmxbr@mail.ru" }
 ]
 requires-python = ">=3.12"
 dependencies = [
