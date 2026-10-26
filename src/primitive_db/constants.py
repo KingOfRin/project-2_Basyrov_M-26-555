@@ -89,3 +89,17 @@ RECORD_DELETED = 'Запись с ID={record_id} успешно удалена �
 NO_MATCHING_RECORDS = "Записи, удовлетворяющие условию, не найдены."
 
 TABLE_INFO = "Таблица: {table}\nСтолбцы: {columns}\nКоличество записей: {count}"
+
+EXIT_COMMAND = "exit"
+
+ACTION_DROP_TABLE = "удаление таблицы"
+ACTION_DELETE_RECORDS = "удаление записи"
+CONFIRM_PROMPT = 'Вы уверены, что хотите выполнить "{action}"? [y/n]: '
+CONFIRM_YES = "y"
+ACTION_CANCELLED = "Операция отменена."
+
+LOG_TIME_MESSAGE = "Функция {name} выполнилась за {seconds:.3f} секунд."
+DATA_FILE_NOT_FOUND = (
+    ERROR_PREFIX + "Файл данных не найден. Возможно, база данных не инициализирована."
+)
+UNEXPECTED_ERROR = "Произошла непредвиденная ошибка: {error}"

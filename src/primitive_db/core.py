@@ -1,6 +1,10 @@
 """Бизнес-логика базы данных: управление таблицами и CRUD-операции."""
 
+import json
+
 from primitive_db.constants import (
+    ACTION_DELETE_RECORDS,
+    ACTION_DROP_TABLE,
     COLUMN_NOT_FOUND,
     ID_COLUMN,
     ID_NOT_EDITABLE,
@@ -21,6 +25,14 @@ from primitive_db.constants import (
     TABLE_NOT_FOUND,
     VALID_TYPES,
 )
+from primitive_db.decorators import (
+    confirm_action,
+    create_cacher,
+    handle_db_errors,
+    log_time,
+)
+
+select_cache = create_cacher()
 
 
 def format_schema(schema):
@@ -54,6 +66,7 @@ def matches(record, where_clause):
     return all(record.get(column) == value for column, value in where_clause.items())
 
 
+@handle_db_errors
 def create_table(metadata, table_name, columns):
     """Добавляет в метаданные таблицу со столбцом ID и столбцами columns.
 
@@ -79,6 +92,8 @@ def create_table(metadata, table_name, columns):
     return metadata
 
 
+@handle_db_errors
+@confirm_action(ACTION_DROP_TABLE)
 def drop_table(metadata, table_name):
     """Удаляет таблицу из метаданных и возвращает обновлённые метаданные."""
     get_table_schema(metadata, table_name)
@@ -96,6 +111,8 @@ def list_tables(metadata):
         print(TABLE_LIST_ITEM.format(table=table_name))
 
 
+@handle_db_errors
+@log_time
 def insert(metadata, table_name, values, table_data):
     """Добавляет запись в таблицу и возвращает обновлённые данные таблицы.
 
@@ -116,13 +133,23 @@ def insert(metadata, table_name, values, table_data):
     return [*table_data, record]
 
 
+@handle_db_errors
+@log_time
 def select(table_data, where_clause=None):
-    """Возвращает все записи или только те, что удовлетворяют where_clause."""
-    if not where_clause:
-        return [dict(record) for record in table_data]
-    return [dict(record) for record in table_data if matches(record, where_clause)]
+    """Возвращает все записи или только те, что удовлетворяют where_clause.
+
+    Результат кэшируется по содержимому таблицы и условию, поэтому повторный
+    одинаковый запрос к неизменённым данным не фильтрует записи заново.
+    """
+    where_clause = where_clause or {}
+    cache_key = json.dumps([table_data, where_clause], sort_keys=True)
+    return select_cache(
+        cache_key,
+        lambda: [record for record in table_data if matches(record, where_clause)],
+    )
 
 
+@handle_db_errors
 def update(table_data, set_clause, where_clause, table_name):
     """Обновляет поля set_clause у записей, подходящих под where_clause."""
     if ID_COLUMN in set_clause:
@@ -141,6 +168,8 @@ def update(table_data, set_clause, where_clause, table_name):
     return table_data
 
 
+@handle_db_errors
+@confirm_action(ACTION_DELETE_RECORDS)
 def delete(table_data, where_clause, table_name):
     """Удаляет записи, подходящие под where_clause, и возвращает остальные."""
     remaining = [record for record in table_data if not matches(record, where_clause)]
@@ -155,6 +184,7 @@ def delete(table_data, where_clause, table_name):
     return remaining
 
 
+@handle_db_errors
 def info(metadata, table_name, table_data):
     """Выводит схему таблицы и количество записей в ней."""
     schema = get_table_schema(metadata, table_name)
